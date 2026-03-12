@@ -10,6 +10,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.commands.AutoAllign;
 import frc.robot.commands.DefaultDriveCommand;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.LimelightSubsystem;
@@ -153,6 +154,10 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
+    // Press A: start vision auto-alignment (no hold required).
+    button(XboxController.Button.kA.value)
+        .onTrue(new AutoAllign(limelightSubsystem, driveSubsystem));
+
     // Start: zero gyro heading for drivebase.
     button(XboxController.Button.kStart.value)
         .onTrue(Commands.runOnce(driveSubsystem::zeroHeading, driveSubsystem));
@@ -167,7 +172,6 @@ public class RobotContainer {
         .whileTrue(Commands.run(() -> driveSubsystem.setAllWheelAngles(0.0), driveSubsystem));
 
     // Toggle B: press once to run shooter + tower + conveyor, press again to stop.
-    // Use steady open-loop output to avoid velocity-PID oscillation (red/green flicker).
     button(XboxController.Button.kB.value)
         .toggleOnTrue(Commands.startEnd(
             () -> shooterSubsystem.setShooterPower(0.85),

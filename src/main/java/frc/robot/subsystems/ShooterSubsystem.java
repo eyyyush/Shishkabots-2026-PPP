@@ -54,7 +54,7 @@ public class ShooterSubsystem extends SubsystemBase {
     
     // Feed power into shooter wheels. Lower values reduce "pop-up" at entry and flatten flight path.
     private static final double TOWER_POWER = 0.65;
-    private static final double CONVEYOR_POWER = 0.45;
+    private static final double CONVEYOR_POWER = 0.75;
 
     // PID constants for shooter velocity control - aggressive tuning for faster response
     private static final double SHOOTER_P = 0.02;
@@ -177,7 +177,7 @@ public class ShooterSubsystem extends SubsystemBase {
         SparkMaxConfig conveyorConfig = new SparkMaxConfig();
         conveyorConfig
             .idleMode(IdleMode.kCoast)
-            .inverted(false)
+            .inverted(true)
             .smartCurrentLimit(CONVEYOR_CURRENT_LIMIT)
             .openLoopRampRate(0.05);
 

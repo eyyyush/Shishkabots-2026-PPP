@@ -9,10 +9,12 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.commands.AutoAllign;
 import frc.robot.commands.DefaultDriveCommand;
 import frc.robot.subsystems.DriveSubsystem;
+import frc.robot.subsystems.IntakePivotSubsystem;
 import frc.robot.subsystems.LimelightSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import edu.wpi.first.wpilibj.XboxController;
@@ -29,6 +31,7 @@ public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private final LimelightSubsystem limelightSubsystem = new LimelightSubsystem();
   private final DriveSubsystem driveSubsystem = new DriveSubsystem(limelightSubsystem);
+  private final IntakePivotSubsystem intakePivotSubsystem = new IntakePivotSubsystem();
   // Shooter: Left CAN ID, Right CAN ID | Tower CAN ID | Conveyor CAN ID | Intake CAN ID
   private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem(11, 9, 12, 13, 16);
 
@@ -38,6 +41,7 @@ public class RobotContainer {
   // Both controllers have the same button mappings for redundancy
   private final XboxController driveController = new XboxController(DRIVER_CONTROLLER_PORT); // Primary controller
   private final XboxController mechanismController = new XboxController(OPERATOR_CONTROLLER_PORT); // Secondary controller
+  private boolean lastAnyLeftBumper = false;
 
   private static final double DEADBAND = 0.10;
   private static final double ROTATION_MULTIPLIER = 0.70;
@@ -52,6 +56,24 @@ public class RobotContainer {
 
   public LimelightSubsystem getLimelightSubsystem() {
     return limelightSubsystem;
+  }
+
+  public void updateControllerDebug() {
+    boolean driverLeftBumper = driveController.getLeftBumperButton();
+    boolean mechanismLeftBumper = mechanismController.getLeftBumperButton();
+    SmartDashboard.putBoolean("Controls/DriverLeftBumper", driverLeftBumper);
+    SmartDashboard.putBoolean("Controls/MechanismLeftBumper", mechanismLeftBumper);
+    SmartDashboard.putBoolean(
+        "Controls/AnyLeftBumper",
+        driverLeftBumper || mechanismLeftBumper);
+
+    boolean anyLeftBumper = driverLeftBumper || mechanismLeftBumper;
+    if (anyLeftBumper != lastAnyLeftBumper) {
+      util.Logger.log(
+          "Left bumper state changed: driver=" + driverLeftBumper
+              + " mechanism=" + mechanismLeftBumper);
+      lastAnyLeftBumper = anyLeftBumper;
+    }
   }
 
   private double applyDeadbandAndCurve(double value) {
@@ -183,6 +205,16 @@ public class RobotContainer {
         .onTrue(Commands.runOnce(
             () -> shooterSubsystem.toggleIntakeOnly(0.6),
             shooterSubsystem));
+
+    // Press left bumper to toggle the intake pivot between its two absolute positions.
+    button(XboxController.Button.kLeftBumper.value)
+        .onTrue(Commands.runOnce(
+            () -> {
+              SmartDashboard.putBoolean("IntakePivot/LeftBumperPressed", true);
+              util.Logger.log("Left bumper pressed: requesting intake pivot toggle");
+              intakePivotSubsystem.togglePosition();
+            },
+            intakePivotSubsystem));
   }
 
   /**

@@ -34,6 +34,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void robotInit() {
+    Logger.init();
     boolean driverConnected = DriverStation.isJoystickConnected(Constants.OperatorConstants.DRIVER_CONTROLLER_PORT);
     String driverName = DriverStation.getJoystickName(Constants.OperatorConstants.DRIVER_CONTROLLER_PORT);
     Logger.log("Driver controller port " + Constants.OperatorConstants.DRIVER_CONTROLLER_PORT
@@ -56,6 +57,7 @@ public class Robot extends TimedRobot {
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
+    m_robotContainer.updateControllerDebug();
     // Reset emergency stop indicator after it's been displayed for a while
     // This ensures it's visible but doesn't stay on permanently
     if (SmartDashboard.getBoolean("EmergencyStop", false)) {

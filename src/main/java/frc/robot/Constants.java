@@ -39,31 +39,15 @@ public final class Constants {
     public static final double DEFAULT_TAG_HEIGHT_METERS = 1.12;
     public static final double CAMERA_HEIGHT_METERS = 0.434;
 
-    // Per-tag target distance table for 2025 field tags (IDs 1-22).
+    // Per-tag target distance table for selected field tags.
     // Tune these values per scoring strategy.
     public static final Map<Integer, Double> TARGET_DISTANCE_METERS_BY_TAG = Map.ofEntries(
-        Map.entry(1, DEFAULT_TARGET_DISTANCE_METERS),
-        Map.entry(2, DEFAULT_TARGET_DISTANCE_METERS),
-        Map.entry(3, DEFAULT_TARGET_DISTANCE_METERS),
-        Map.entry(4, DEFAULT_TARGET_DISTANCE_METERS),
-        Map.entry(5, DEFAULT_TARGET_DISTANCE_METERS),
-        Map.entry(6, DEFAULT_TARGET_DISTANCE_METERS),
         Map.entry(7, DEFAULT_TARGET_DISTANCE_METERS),
-        Map.entry(8, DEFAULT_TARGET_DISTANCE_METERS),
-        Map.entry(9, DEFAULT_TARGET_DISTANCE_METERS),
         Map.entry(10, DEFAULT_TARGET_DISTANCE_METERS),
-        Map.entry(11, DEFAULT_TARGET_DISTANCE_METERS),
         Map.entry(12, DEFAULT_TARGET_DISTANCE_METERS),
-        Map.entry(13, DEFAULT_TARGET_DISTANCE_METERS),
-        Map.entry(14, DEFAULT_TARGET_DISTANCE_METERS),
-        Map.entry(15, DEFAULT_TARGET_DISTANCE_METERS),
-        Map.entry(16, DEFAULT_TARGET_DISTANCE_METERS),
-        Map.entry(17, DEFAULT_TARGET_DISTANCE_METERS),
-        Map.entry(18, DEFAULT_TARGET_DISTANCE_METERS),
-        Map.entry(19, DEFAULT_TARGET_DISTANCE_METERS),
-        Map.entry(20, DEFAULT_TARGET_DISTANCE_METERS),
-        Map.entry(21, DEFAULT_TARGET_DISTANCE_METERS),
-        Map.entry(22, DEFAULT_TARGET_DISTANCE_METERS)
+        Map.entry(23, DEFAULT_TARGET_DISTANCE_METERS),
+        Map.entry(26, DEFAULT_TARGET_DISTANCE_METERS),
+        Map.entry(28, DEFAULT_TARGET_DISTANCE_METERS)
     );
   }
 

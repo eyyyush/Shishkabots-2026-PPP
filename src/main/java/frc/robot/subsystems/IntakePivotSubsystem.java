@@ -1,6 +1,5 @@
 package frc.robot.subsystems;
 
-import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
@@ -8,6 +7,7 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import util.Logger;
@@ -15,27 +15,25 @@ import util.Logger;
 public class IntakePivotSubsystem extends SubsystemBase {
     private static final int PIVOT_CAN_ID = 14;
 
-    // Tune these using the absolute encoder value shown on Shuffleboard.
-    private static final double LOWER_POSITION = 0.0;
-    private static final double UPPER_POSITION = 0.355;
-    private static final double POSITION_TOLERANCE = 0.01;
-    private static final double PIVOT_POWER_UP = 0.30;
-    private static final double PIVOT_POWER_DOWN = -0.20;
+    // Time-based calibration values (seconds).
+    private static final double PIVOT_DOWN_DURATION_SEC = 1.5;
+    private static final double PIVOT_UP_DURATION_SEC = 2.0;
+    private static final double PIVOT_POWER_DOWN = 0.30;
+    private static final double PIVOT_POWER_UP = -0.20;
     private static final int PIVOT_CURRENT_LIMIT = 40;
 
     private final SparkMax pivotMotor;
-    private final AbsoluteEncoder absoluteEncoder;
 
-    private double targetPosition = UPPER_POSITION;
-    private boolean movingToUpper = true;
-    private boolean nextToggleGoesToLower = false;
+    private boolean movingDown = true;
+    private boolean nextToggleGoesDown = true;
     private boolean enabled = false;
     private boolean lastEnabled = false;
+    private double moveStartTimeSec = 0.0;
+    private double moveDurationSec = 0.0;
     private int toggleCount = 0;
 
     public IntakePivotSubsystem() {
         pivotMotor = new SparkMax(PIVOT_CAN_ID, MotorType.kBrushless);
-        absoluteEncoder = pivotMotor.getAbsoluteEncoder();
 
         SparkMaxConfig pivotConfig = new SparkMaxConfig();
         pivotConfig
@@ -55,19 +53,18 @@ public class IntakePivotSubsystem extends SubsystemBase {
     }
 
     public void togglePosition() {
-        double currentPosition = getAbsolutePosition();
-
-        movingToUpper = !nextToggleGoesToLower;
-        targetPosition = nextToggleGoesToLower ? LOWER_POSITION : UPPER_POSITION;
-        nextToggleGoesToLower = !nextToggleGoesToLower;
+        movingDown = nextToggleGoesDown;
+        moveDurationSec = movingDown ? PIVOT_DOWN_DURATION_SEC : PIVOT_UP_DURATION_SEC;
+        moveStartTimeSec = Timer.getFPGATimestamp();
+        nextToggleGoesDown = !nextToggleGoesDown;
         enabled = true;
         toggleCount++;
 
         Logger.log(
             String.format(
-                "Intake pivot toggle requested. Current=%.3f Target=%.3f",
-                currentPosition,
-                targetPosition
+                "Intake pivot toggle requested. Direction=%s Duration=%.2fs",
+                movingDown ? "DOWN" : "UP",
+                moveDurationSec
             )
         );
         Logger.log(
@@ -86,26 +83,19 @@ public class IntakePivotSubsystem extends SubsystemBase {
         enabled = false;
     }
 
-    public double getAbsolutePosition() {
-        return absoluteEncoder.getPosition();
-    }
-
-    public boolean isAtTarget() {
-        return Math.abs(getAbsolutePosition() - targetPosition) <= POSITION_TOLERANCE;
-    }
-
     public boolean isEnabled() {
         return enabled;
     }
 
     @Override
     public void periodic() {
-        double currentPosition = getAbsolutePosition();
+        double nowSec = Timer.getFPGATimestamp();
+        double elapsedSec = nowSec - moveStartTimeSec;
 
-        SmartDashboard.putNumber("IntakePivot/AbsolutePosition", currentPosition);
-        SmartDashboard.putNumber("IntakePivot/TargetPosition", targetPosition);
         SmartDashboard.putBoolean("IntakePivot/Moving", enabled);
-        SmartDashboard.putBoolean("IntakePivot/MovingToUpper", movingToUpper);
+        SmartDashboard.putBoolean("IntakePivot/MovingDown", movingDown);
+        SmartDashboard.putNumber("IntakePivot/MoveDurationSec", moveDurationSec);
+        SmartDashboard.putNumber("IntakePivot/ElapsedSec", enabled ? elapsedSec : 0.0);
         SmartDashboard.putNumber("IntakePivot/AppliedOutput", pivotMotor.getAppliedOutput());
         SmartDashboard.putNumber("IntakePivot/ToggleCount", toggleCount);
 
@@ -117,9 +107,9 @@ public class IntakePivotSubsystem extends SubsystemBase {
         if (!lastEnabled) {
             Logger.log(
                 String.format(
-                    "Intake pivot enabled. Current=%.3f Target=%.3f BusV=%.2f Applied=%.2f OutputCurrent=%.2f",
-                    currentPosition,
-                    targetPosition,
+                    "Intake pivot enabled. Direction=%s Duration=%.2fs BusV=%.2f Applied=%.2f OutputCurrent=%.2f",
+                    movingDown ? "DOWN" : "UP",
+                    moveDurationSec,
                     pivotMotor.getBusVoltage(),
                     pivotMotor.getAppliedOutput(),
                     pivotMotor.getOutputCurrent()
@@ -128,11 +118,11 @@ public class IntakePivotSubsystem extends SubsystemBase {
             lastEnabled = true;
         }
 
-        if (isAtTarget()) {
+        if (elapsedSec >= moveDurationSec) {
             stop();
             return;
         }
 
-        pivotMotor.set(MathUtil.clamp(movingToUpper ? PIVOT_POWER_UP : PIVOT_POWER_DOWN, -1.0, 1.0));
+        pivotMotor.set(MathUtil.clamp(movingDown ? PIVOT_POWER_DOWN : PIVOT_POWER_UP, -1.0, 1.0));
     }
 }

@@ -81,6 +81,8 @@ public class DriveSubsystem extends SubsystemBase {
     private final Pigeon2 m_gyro = new Pigeon2(DriveConstants.PIGEON_CAN_ID); // Update the ID based on your Pigeon's CAN ID
     // initialize the field for simulator tracking
     private final Field2d m_field = new Field2d();
+    // Offset captured from raw Pigeon yaw so startup heading is treated as 0 degrees.
+    private double yawZeroOffsetDeg = 0.0;
 
     private int updateCounter = 0;
 
@@ -90,8 +92,8 @@ public class DriveSubsystem extends SubsystemBase {
   public DriveSubsystem(LimelightSubsystem limelight) {
     this.m_LimelightSubsystem = limelight;
     m_PoseEstimator = new PoseEstimator(this, m_LimelightSubsystem);
-        // Reset the gyro
-        m_gyro.reset();
+        // Use raw Pigeon yaw directly, but baseline startup heading as field 0 degrees.
+        yawZeroOffsetDeg = m_gyro.getYaw().getValueAsDouble();
 
         // log field into smartdashboard
         SmartDashboard.putData("Field", m_field);
@@ -252,7 +254,21 @@ public class DriveSubsystem extends SubsystemBase {
      * Returns the gyro rotation as a Rotation2d object
      */
     public Rotation2d getGyroRotation() {
-        return Rotation2d.fromRadians(m_gyro.getYaw().getValueAsDouble());
+        return Rotation2d.fromDegrees(getYawDegrees());
+    }
+
+    /**
+     * Returns raw Pigeon yaw in degrees.
+     */
+    public double getRawYawDegrees() {
+        return m_gyro.getYaw().getValueAsDouble();
+    }
+
+    /**
+     * Returns yaw in degrees after subtracting the startup/zero offset.
+     */
+    public double getYawDegrees() {
+        return getRawYawDegrees() - yawZeroOffsetDeg;
     }
 
     /**
@@ -317,9 +333,11 @@ public class DriveSubsystem extends SubsystemBase {
                 SmartDashboard.putNumber("Calibration/BL_Degrees", Math.toDegrees(m_backLeft.getRawAbsoluteEncoderPosition()));
                 SmartDashboard.putNumber("Calibration/BR_Degrees", Math.toDegrees(m_backRight.getRawAbsoluteEncoderPosition()));
 
-                // Show gyro heading
+                // Show adjusted (field-relative) and raw gyro headings.
                 SmartDashboard.putNumber("Drive/Gyro_Degrees", getGyroRotation().getDegrees());
                 SmartDashboard.putNumber("Drive/Gyro_Radians", getGyroRotation().getRadians());
+                SmartDashboard.putNumber("Drive/Gyro_RawDegrees", getRawYawDegrees());
+                SmartDashboard.putNumber("Drive/Gyro_ZeroOffsetDegrees", yawZeroOffsetDeg);
 
                 // --- Per-module debug values for Shuffleboard ---
                 SmartDashboard.putNumber("Drive/FrontLeft/MeasuredAngleRad", m_frontLeft.getSteerAngle());
@@ -392,11 +410,10 @@ public class DriveSubsystem extends SubsystemBase {
     }
 
     /**
-     * Resets the gyro to zero. Call this when the robot is facing "forward"
-     * to set the field-relative forward direction.
+     * Re-baselines heading to zero without resetting the Pigeon sensor itself.
      */
     public void zeroHeading() {
-        m_gyro.reset();
+        yawZeroOffsetDeg = getRawYawDegrees();
     }
     
     public Command driveToEndPose(Pose2d endPose) {

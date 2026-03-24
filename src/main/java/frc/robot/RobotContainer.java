@@ -150,6 +150,12 @@ public class RobotContainer {
         () -> driveController.getRawButton(buttonId) || mechanismController.getRawButton(buttonId));
   }
 
+  private Trigger rightTrigger(double threshold) {
+    return new Trigger(
+        () -> driveController.getRightTriggerAxis() > threshold
+            || mechanismController.getRightTriggerAxis() > threshold);
+  }
+
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     // Configure the trigger bindings
@@ -211,13 +217,23 @@ public class RobotContainer {
             () -> shooterSubsystem.toggleIntakeOnly(0.6),
             shooterSubsystem));
 
-    // Press left bumper to toggle the intake pivot between its two absolute positions.
+    // Right trigger: move intake pivot down.
+    rightTrigger(0.5)
+        .onTrue(Commands.runOnce(
+            () -> {
+              SmartDashboard.putBoolean("IntakePivot/RightTriggerPressed", true);
+              util.Logger.log("Right trigger pressed: commanding intake pivot DOWN");
+              intakePivotSubsystem.moveDown();
+            },
+            intakePivotSubsystem));
+
+    // Left bumper: move intake pivot up.
     button(XboxController.Button.kLeftBumper.value)
         .onTrue(Commands.runOnce(
             () -> {
               SmartDashboard.putBoolean("IntakePivot/LeftBumperPressed", true);
-              util.Logger.log("Left bumper pressed: requesting intake pivot toggle");
-              intakePivotSubsystem.togglePosition();
+              util.Logger.log("Left bumper pressed: commanding intake pivot UP");
+              intakePivotSubsystem.moveUp();
             },
             intakePivotSubsystem));
   }
@@ -249,4 +265,3 @@ public class RobotContainer {
     return driveSubsystem;
   }
 }
-

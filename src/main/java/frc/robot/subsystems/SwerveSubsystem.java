@@ -107,8 +107,8 @@ SwerveDrive  swerveDrive;
           this::getRobotVelocity,
           this::setChassisSpeeds,
           new PPHolonomicDriveController(
-              new PIDConstants(5.0, 0.0, 0.0),
-              new PIDConstants(5.0, 0.0, 0.0)),
+              new PIDConstants(.050, 0.0, 0.0),
+              new PIDConstants(.050, 0.0, 0.0)),
           config,
           () -> DriverStation.getAlliance().map(alliance -> alliance == DriverStation.Alliance.Red).orElse(false),
           this);

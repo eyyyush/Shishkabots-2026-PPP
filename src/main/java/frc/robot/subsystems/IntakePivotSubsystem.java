@@ -17,7 +17,6 @@ public class IntakePivotSubsystem extends SubsystemBase {
 
     // Time-based calibration values (seconds).
     private static final double PIVOT_DOWN_DURATION_SEC = 0.5;
-    private static final double PIVOT_DOWN_DURATION_SEC_AFTER_FIRST = 0.25;
     private static final double PIVOT_UP_DURATION_SEC = 0.5;
     private static final double PIVOT_POWER_DOWN = 0.30;
     private static final double PIVOT_POWER_UP = -0.20;
@@ -26,12 +25,10 @@ public class IntakePivotSubsystem extends SubsystemBase {
     private final SparkMax pivotMotor;
 
     private boolean movingDown = true;
-    private boolean nextToggleGoesDown = true;
     private boolean enabled = false;
     private boolean lastEnabled = false;
     private double moveStartTimeSec = 0.0;
     private double moveDurationSec = 0.0;
-    private int toggleCount = 0;
 
     public IntakePivotSubsystem() {
         pivotMotor = new SparkMax(PIVOT_CAN_ID, MotorType.kBrushless);
@@ -53,20 +50,15 @@ public class IntakePivotSubsystem extends SubsystemBase {
         Logger.log("Intake pivot subsystem initialized on CAN 14");
     }
 
-    public void togglePosition() {
-        movingDown = nextToggleGoesDown;
-        boolean hasClickedBefore = toggleCount > 0;
-        moveDurationSec = movingDown
-            ? (hasClickedBefore ? PIVOT_DOWN_DURATION_SEC_AFTER_FIRST : PIVOT_DOWN_DURATION_SEC)
-            : PIVOT_UP_DURATION_SEC;
+    private void startMove(boolean shouldMoveDown, double durationSec) {
+        movingDown = shouldMoveDown;
+        moveDurationSec = durationSec;
         moveStartTimeSec = Timer.getFPGATimestamp();
-        nextToggleGoesDown = !nextToggleGoesDown;
         enabled = true;
-        toggleCount++;
 
         Logger.log(
             String.format(
-                "Intake pivot toggle requested. Direction=%s Duration=%.2fs",
+                "Intake pivot move requested. Direction=%s Duration=%.2fs",
                 movingDown ? "DOWN" : "UP",
                 moveDurationSec
             )
@@ -80,6 +72,14 @@ public class IntakePivotSubsystem extends SubsystemBase {
                 enabled
             )
         );
+    }
+
+    public void moveDown() {
+        startMove(true, PIVOT_DOWN_DURATION_SEC);
+    }
+
+    public void moveUp() {
+        startMove(false, PIVOT_UP_DURATION_SEC);
     }
 
     public void stop() {
@@ -101,8 +101,6 @@ public class IntakePivotSubsystem extends SubsystemBase {
         SmartDashboard.putNumber("IntakePivot/MoveDurationSec", moveDurationSec);
         SmartDashboard.putNumber("IntakePivot/ElapsedSec", enabled ? elapsedSec : 0.0);
         SmartDashboard.putNumber("IntakePivot/AppliedOutput", pivotMotor.getAppliedOutput());
-        SmartDashboard.putNumber("IntakePivot/ToggleCount", toggleCount);
-
         if (!enabled) {
             lastEnabled = false;
             return;

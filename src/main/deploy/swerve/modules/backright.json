@@ -1,9 +1,9 @@
 {
   "location": {
     "front": -11.86,
-    "left": 6.213
+    "left": -6.213
   },
-  "absoluteEncoderOffset": 3.929,
+  "absoluteEncoderOffset": 0,
   "drive": {
     "type": "sparkmax_neo",
     "id": 3,

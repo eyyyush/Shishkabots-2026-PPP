@@ -92,9 +92,14 @@ public class RobotContainer {
         () -> shooterSubsystem.toggleIntakeOnly(0.6),
         shooterSubsystem));
 
-    // Toggle intake pivot position on left bumper.
+    // Move intake pivot down on right trigger.
+    m_driverController.rightTrigger().onTrue(Commands.runOnce(
+        intakePivotSubsystem::moveDown,
+        intakePivotSubsystem));
+
+    // Move intake pivot up on left bumper.
     m_driverController.leftBumper().onTrue(Commands.runOnce(
-        intakePivotSubsystem::togglePosition,
+        intakePivotSubsystem::moveUp,
         intakePivotSubsystem));
   }
 
